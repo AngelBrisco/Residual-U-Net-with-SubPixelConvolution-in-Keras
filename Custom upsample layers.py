@@ -105,7 +105,8 @@ class SubpixelLayer2D_log(Layer):
 
     def __init__(self,filters=None,ksz=1, scale=2, **kwargs):
         self.loop=int(np.log2(scale))-1
-        self.scale=2
+        self.scale=scale
+        self.prime_scale=2
         self.out_channels=filters
         self.ksz=ksz
         self.loop_kernel={}
@@ -117,7 +118,7 @@ class SubpixelLayer2D_log(Layer):
 
         #Multiplica el kernel para evitar efecto tablero. Aunque no lo creas lo entendiste
         y=tf.initializers.variance_scaling()(shape=(h,w,cin,cout))
-        y=tf.tile(y,[1,1,1,self.scale**2])
+        y=tf.tile(y,[1,1,1,self.prime_scale**2])
 
         sp_weights=tf.Variable(y,
                             dtype=dtype,
@@ -127,7 +128,7 @@ class SubpixelLayer2D_log(Layer):
     def build(self, input_shape):
         b,h,w,cin=input_shape
         if self.out_channels==None:
-            self.out_channels=(cin.value)//(self.scale**2)
+            self.out_channels=(cin.value)//(self.prime_scale**2)
 
         self.kernel = self.add_weight(shape=(self.ksz,self.ksz,cin.value,self.out_channels),
                                       initializer=self.kinit,
@@ -146,8 +147,8 @@ class SubpixelLayer2D_log(Layer):
             y = tf.keras.backend.conv2d(x, kernel, strides=(1, 1), padding='same', data_format="channels_last",
                                         dilation_rate=(1, 1))
             y = tf.keras.backend.relu(y)
-            y = tf.depth_to_space(y, self.scale)
-            y = tf.keras.backend.pool2d(y, pool_size=(self.scale,self.scale), strides=(1, 1),  padding='same',  data_format="channels_last", pool_mode='avg')
+            y = tf.depth_to_space(y, self.prime_scale)
+            y = tf.keras.backend.pool2d(y, pool_size=(self.prime_scale,self.prime_scale), strides=(1, 1),  padding='same',  data_format="channels_last", pool_mode='avg')
         return y
 
     def compute_output_shape(self,input_shape):
