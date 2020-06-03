@@ -14,7 +14,9 @@ class SubpixelLayer2D(Layer):
         h,w,cin,cout=shape
         
         kw=tf.keras.initializers.RandomNormal()(shape=(h,w,cin,self.out_channels))
+        kwro=tf.reshape(kw,[h,w,self.out_channels*cin,1])
         kwn=tf.tile(kwro,[1,1,1,self.scale**2])
+        kwrn=tf.reshape(kwn,[h,w,cin,cout])
         
         sp_weights=tf.Variable(kwrn,
                             dtype=dtype,
